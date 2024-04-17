@@ -1,4 +1,41 @@
-let listStudents = [
+const SERVER_URL = 'http://localhost:3000'
+
+//Func to refer to the Server
+async function serverAddStudent(obj) {
+  let response = await fetch(SERVER_URL + '/api/students', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(obj),
+  })
+
+  let data = await response.json()
+
+  return data
+}
+
+//Func to delte entry from the Server
+async function serverDeleteStudent(id) {
+  let response = await fetch(SERVER_URL + '/api/students' + id, {
+    method: 'DELETE',
+  })
+
+  let data = await response.json()
+  return data
+}
+
+// Get
+async function serverGetStudents() {
+  let response = await fetch(SERVER_URL + '/api/students', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  let data = await response.json()
+  return data
+}
+
+let serverData = await serverGetStudents()
+
+/* let listStudents = [
   {
     name: "Petr",
     lastname: "Berezov",
@@ -24,6 +61,13 @@ let listStudents = [
     start: 2018,
   },
 ];
+ */
+
+let listStudents = []
+
+if (serverData) {
+  listStudents = serverData
+}
 
 //Format date
 function formatDate(date) {
@@ -45,15 +89,27 @@ function $getNewStudentTR(item) {
   const $tdLNS = document.createElement("td");
   const $tdBirthday = document.createElement("td");
   const $tdfaculty = document.createElement("td");
-  const $tdStart = document.createElement("td");
+  const $tdstudyStart = document.createElement("td");
+  const $tdDelete = document.createElement("td");
+  const $btnDelete = document.createElement("button");
+
+  $btnDelete.classList.add("btn", "btn-danger", "w-100")
+  $btnDelete.textContent = 'Delete'
 
   // Fill tr with value
   $tdLNS.textContent = `${item.lastname} ${item.name} ${item.surname}`;
-  $tdBirthday.textContent = formatDate(item.birthday);
+  $tdBirthday.textContent = formatDate(new Date(item.birthday));
   $tdfaculty.textContent = item.faculty;
-  $tdStart.textContent = item.start;
+  $tdstudyStart.textContent = item.start;
 
-  $tr.append($tdLNS, $tdBirthday, $tdfaculty, $tdStart);
+//Click by deletebtn
+$btnDelete.addEventListener('click', async function() {
+  await serverDeleteStudent(item.id)
+  $tr.remove()
+})
+
+  $tdDelete.append($btnDelete)
+  $tr.append($tdLNS, $tdBirthday, $tdfaculty, $tdstudyStart, $tdDelete);
   return $tr;
 }
 
@@ -72,7 +128,7 @@ function render(arr) {
 
 render(listStudents)
 
-document.getElementById('add-form').addEventListener('submit', function(event) {
+document.getElementById('add-form').addEventListener('submit', async function(event) {
     event.preventDefault()
 
     let newStudentObj = {
@@ -81,9 +137,13 @@ document.getElementById('add-form').addEventListener('submit', function(event) {
         surname: document.getElementById('surname-inp').value,
         birthday: new Date(document.getElementById('birthday-inp').value),
         faculty: document.getElementById('faculty-inp').value,
-        start: document.getElementById('start-inp').value,
+        studyStart: document.getElementById('studyStart-inp').value,
     }
 
-    listStudents.push(newStudentObj)
+    let serverDataObj =  await serverAddStudent(newStudentObj)
+    serverDataObj.birthday = new Date(serverDataObj.birthday)
+
+    listStudents.push(serverDataObj)
+    console.log(listStudents)
     render(listStudents)
 });
